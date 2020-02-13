@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>JsonStore</name>
+    </assembly>
+    <members>
+        <member name="T:JsonStore.Lists">
+            <summary>
+            Object to desearlize JSON.
+            </summary>
+        </member>
+        <member name="M:JsonStore.Lists.ToString">
+            <summary>
+            Returns objects value as a string.
+            </summary>
+            <returns>Objects value as a string</returns>
+        </member>
+        <member name="P:JsonStore.Lists.FileID">
+            <summary>
+            Current file ID.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Lists.strings">
+            <summary>
+            List of stored strings.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Lists.integers">
+            <summary>
+            List of stored integers.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Lists.bools">
+            <summary>
+            List of stored bools.
+            </summary>
+        </member>
+        <member name="T:JsonStore.Json">
+            <summary>
+            Object to setup and use the stored lists.
+            </summary>
+        </member>
+        <member name="M:JsonStore.Json.ChangeString(System.String,System.UInt16)">
+            <summary>
+            New or existing string to store.
+            </summary>
+            <param name="data">Strings contents.</param>
+            <param name="position">Strings location in the list.</param>
+        </member>
+        <member name="M:JsonStore.Json.ChangeInteger(System.UInt16,System.UInt16)">
+            <summary>
+            New or existing integer to store.
+            </summary>
+            <param name="data">Integers value.</param>
+            <param name="position">Integers location in the list.</param>
+        </member>
+        <member name="M:JsonStore.Json.ChangeBool(System.UInt16,System.UInt16)">
+            <summary>
+            New or existing bool to store.
+            </summary>
+            <param name="data">Bools value.</param>
+            <param name="position">Bools postion in the list.</param>
+        </member>
+        <member name="M:JsonStore.Json.LoadLists(System.UInt16,System.UInt16,System.UInt16,System.String)">
+            <summary>
+            Setups objects and creates/reads the JSON file.
+            </summary>
+            <param name="stringTotal">Total strings in list.</param>
+            <param name="integerTotal">Total integers is list.</param>
+            <param name="boolTotal">Total bools in list.</param>
+            <param name="path">File directory to save file too.</param>
+        </member>
+        <member name="M:JsonStore.Json.SendLists">
+            <summary>
+            Sends all lists to S+.
+            </summary>
+        </member>
+        <member name="M:JsonStore.Json.SendToAnotherProcessor(System.String,System.String,System.String,System.String)">
+            <summary>
+            Sends the JSON file to another processor/FTP server.
+            </summary>
+            <param name="ipAddress">IP address of FTP server.</param>
+            <param name="username">Username to login to the FTP server.</param>
+            <param name="password">Password to login to the FTP server.</param>
+            <param name="remotePath">File path to upload file too.</param>
+        </member>
+        <member name="P:JsonStore.Json.newOnListChange">
+            <summary>
+            Sets or gets the newOnListChange.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Json.fileSuccessfullyCreated">
+            <summary>
+            Sets or gets the fileSuccessfullyCreated.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Json.ID">
+            <summary>
+            Sets or gets the JSON ID.
+            </summary>
+        </member>
+        <member name="P:JsonStore.Json.IndentTrue">
+            <summary>
+            Sets file formatting.
+            </summary>
+        </member>
+        <member name="T:JsonStore.Json.OnListChange">
+            <summary>
+            Delegate that passes data between S# and S+.
+            </summary>
+            <param name="s">Returned string.</param>
+            <param name="i">Returned integer.</param>
+            <param name="b">Returned bool.</param>
+            <param name="type">Returned signal type.</param>
+            <param name="position">Returned signals location in the list.</param>
+        </member>
+        <member name="T:JsonStore.Json.OnFileSuccesfullyCreated">
+            <summary>
+            Delegate that passes file creation status to s+.
+            </summary>
+            <param name="value">Returns file exists status.</param>
+        </member>
+    </members>
+</doc>

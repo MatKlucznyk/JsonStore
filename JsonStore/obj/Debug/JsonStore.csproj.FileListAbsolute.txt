@@ -1,0 +1,15 @@
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\ResolveAssemblyReference.cache
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.dll
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.pdb
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\Newtonsoft.Json.Compact.dll
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\SimplSharpCustomAttributesInterface.dll
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\SimplSharpHelperInterface.dll
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.dll
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.pdb
+C:\Users\matklucznyk\OneDrive - RAVE AUDIO VISUAL\Modules\RAVE Modules\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.xml
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.xml
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.dll
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.pdb
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\ResolveAssemblyReference.cache
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.dll
+D:\Programming\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.pdb
