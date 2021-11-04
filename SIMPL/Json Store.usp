@@ -1,6 +1,5 @@
 #SYMBOL_NAME "Json Store"
                                     
-#INCLUDEPATH "C:\\Users\\matklucznyk\\OneDrive - RAVE AUDIO VISUAL\\Modules\\RAVE Modules\\SIMPLSharp Projects\\JsonStore\\JsonStore\\bin\\Debug"
 #USER_SIMPLSHARP_LIBRARY "JsonStore" 
 
 //#ENABLE_TRACE                   
