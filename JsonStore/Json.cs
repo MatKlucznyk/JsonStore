@@ -140,7 +140,7 @@ namespace JsonStore
         /// <param name="position">Integers location in the list.</param>
         public void ChangeInteger(ushort data, ushort position)
         {
-            integers[position] = Convert.ToInt16(data);
+            integers[position] = Convert.ToInt32(data);
             ConvertListsToJson();
         }
 
