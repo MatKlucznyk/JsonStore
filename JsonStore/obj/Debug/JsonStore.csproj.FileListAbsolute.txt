@@ -25,3 +25,11 @@ C:\Users\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp P
 C:\Users\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.dll
 C:\Users\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.pdb
 C:\Users\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\Newtonsoft.Json.Compact.dll
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.xml
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.dll
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\JsonStore.pdb
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\SimplSharpSQLHelperInterface.dll
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\bin\Debug\Newtonsoft.Json.Compact.dll
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\ResolveAssemblyReference.cache
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.dll
+D:\mathew.klucznyk\OneDrive - Global USS\Crestron Modules\Mat\SIMPLSharp Projects\JsonStore\JsonStore\obj\Debug\JsonStore.pdb

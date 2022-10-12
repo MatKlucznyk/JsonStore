@@ -1,6 +1,10 @@
 #SYMBOL_NAME "Json Store"
-                                    
-#USER_SIMPLSHARP_LIBRARY "JsonStore" 
+
+#USER_SIMPLSHARP_LIBRARY "JsonStore"
+
+#DEFINE_CONSTANT TotalBools 50
+#DEFINE_CONSTANT TotalAnalogs 50
+#DEFINE_CONSTANT TotalStrings 50 
 
 //#ENABLE_TRACE                   
 
@@ -9,14 +13,11 @@ Written By: Mat Klucznyk
 Written On: 2018-08-27
 ****v1.0****
 This module saves Strings, Analogs and Digital signals to a JSON file under \User
-      
-Parameters:
-TotalStrings: Indicates how many strings will be saved
-TotalBools: Indicates how many bool values will be saved
-TotalAnalogs: Indicates how many analog values will be saved  
+
+Parameters: 
 FilePath: Leave empty for default folder which is \User\App{program number}, or fill in with custom directory
 ID: Any string that is unique to this instance, if mulitple stores will be used multiple files will be created and tagged with the ID. Example: ID = main, file path will be \User\jsonStore_main.json      
-      
+
 Inputs:         
 Initialize: Initializes the JSON file, creates one if one does not exist or pulls the data and sends to SIMPL
 SendFile: Sends the jsonStore_{ID}.json file to another processor or FTP server
@@ -27,7 +28,7 @@ FTP_Username: Sets the username to use to login to the remote processor/FTP serv
 FTP_Password: Sets the password to use to login to the remote processor/FTP server
 FTP_RemoteFilePath: Sets the remote FTP servers file path to send file to
 Strings[x]: Stores the strings content when changed
-                                              
+
 FileCreated: Indicates that the file was created succesfully or the file was found in the directory                                                   
 BoolsOut[x]: Reports the currently saved bool value
 AnalogsOut[x]: Reports the currently saved analog value
@@ -38,75 +39,77 @@ StringsOut[x]: Reports the currently saved strings content
 Since this module saves the file to processors harddrive, the file can be retrieved and sent to another procesor
 To send file to another FTP server, ensure in the home directory that a directory has been created named User
 #HELP_END
-                                              
-String_Input _skip_, ProcessorIP[16], FTP_Username[100], FTP_Password[100], FTP_RemoteFilePath[1000], _skip_, Strings[50][255];   
-Digital_Input _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, Initialize, SendFile, Bools[50,50];
-Analog_Input Analogs[50,50];
 
-String_Output _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, StringsOut[50,50];
-Digital_Output _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, FileCreated, _skip_, BoolsOut[50,50];
-Analog_Output AnalogsOut[50,50];
-                                  
-Integer_Parameter TotalStrings, TotalBools, TotalAnalogs, IndentJsonFile;
+String_Input _skip_, ProcessorIP[16], FTP_Username[100], FTP_Password[100], FTP_RemoteFilePath[1000], _skip_, Strings[TotalStrings][255];   
+Digital_Input _skip_, _skip_, _skip_, Initialize, SendFile, Bools[TotalBools,TotalBools];
+Analog_Input Analogs[TotalAnalogs,TotalAnalogs];
+
+String_Output _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, StringsOut[TotalStrings,TotalStrings];
+Digital_Output _skip_, _skip_, _skip_, FileCreated, _skip_, BoolsOut[TotalBools,TotalBools];
+Analog_Output AnalogsOut[TotalAnalogs,TotalAnalogs];
+
+Integer_Parameter IndentJsonFile;
 String_Parameter FilePath[100], ID[100];
 
 Json store;      
 
 Integer enable;
 
-Threadsafe Change Bools
+Change Bools
 {    
-	integer x;
-         
-	if (enable = 1)
+	integer x, y;
+	
+	if (enable)
 	{               
-		trace("Bools are enabled");
 		x = GetLastModifiedArrayIndex();
-				
-		if (Bools[x])          
-		{
-			store.ChangeBool(1, x - 1);  
-		}
-		else
-		{
-			store.ChangeBool(0, x - 1);
-		}
+		y = Bools[x];
 		
-		BoolsOut[x] = Bools[x];	
+		if(BoolsOut[x] != y)
+		{
+			store.ChangeBool(y, x - 1);
+			BoolsOut[x] = y;
+		}
 	}
 } 
 
-Threadsafe Change Analogs
+Change Analogs
 {       
-	integer x;
+	integer x, y;
 	
-	if (enable = 1)
+	if (enable)
 	{	
 		x = GetLastModifiedArrayIndex();
+		y = Analogs[x];
 		
-		store.ChangeInteger(Analogs[x], x - 1);  
-		
-		AnalogsOut[x] = Analogs[x];	 
+		if(AnalogsOut[x] != y)
+		{
+			store.ChangeInteger(y, x - 1);  
+			
+			AnalogsOut[x] = y;	
+		}
 	}
 }  
 
-Threadsafe Change Strings
+Change Strings
 {     
 	integer x;
+	string y[255];
 	
-	if (enable = 1)
+	if (enable)
 	{
 		x = GetLastModifiedArrayIndex();
+		y = Strings[x];
 		
-		store.ChangeString(Strings[x], x - 1);  
+		store.ChangeString(y, x - 1);  
 		
-		StringsOut[x] = Strings[x];
+		StringsOut[x] = y;
 	}
 }  
 
 Callback Function Func(STRING s , INTEGER i , INTEGER b , STRING type , INTEGER position)
-{                
-	Trace("%s %s %d %d %d", type, s, i, b, position); 
+{
+	if(!enable)
+		enable = 1;
 	
 	IF (type = "string")
 	{
@@ -114,30 +117,24 @@ Callback Function Func(STRING s , INTEGER i , INTEGER b , STRING type , INTEGER 
 	}  
 	Else If (type = "int")
 	{
+		if(AnalogsOut[position] != i)
 		AnalogsOut[position] = i;
 	}    
 	Else If (type = "bool")
 	{
-		if (b = 1)
-			BoolsOut[position] = ON;
-		else
-			BoolsOut[position] = OFF;
+		if(BoolsOut[position] != b)
+		BoolsOut[position] = b;
 	}   
-	
-	enable = 1;
 }   
 
 Callback Function FileReady(integer value)
 {
-	if(value = 0)
-		FileCreated = OFF;
-	else
-		FileCreated = ON;	
+	FileCreated = value;
 }
 
 Push SendFile
 {
-	if (enable = 1)  
+	if (enable)  
 	{
 		store.SendToAnotherProcessor(ProcessorIP, FTP_Username, FTP_Password , FTP_RemoteFilePath);
 	}
@@ -152,7 +149,7 @@ Push Initialize
 Function Main()
 {
 	WaitForInitializationComplete();  
-	                             
+	
 	store.ID = ID;
 	store.IndentTrue = IndentJsonFile;
 	RegisterDelegate(store, newOnListChange, Func);

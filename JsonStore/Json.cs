@@ -48,9 +48,10 @@ namespace JsonStore
     /// </summary>
     public class Json
     {
-        private List<string> strings = new List<string>();
-        private List<int> integers = new List<int>();
-        private List<bool> bools = new List<bool>();
+        private List<string> _strings = new List<string>();
+        private List<int> _integers = new List<int>();
+        private List<bool> _bools = new List<bool>();
+        private readonly object _fileLock = new object();
         
         /// <summary>
         /// Sets or gets the newOnListChange.
@@ -92,34 +93,6 @@ namespace JsonStore
         private int integersTotal;
         private int boolsTotal;
 
-        private bool IsFileLocked(FileInfo file)
-        {
-            FileStream stream = null;
-
-            if (file.Exists)
-            {
-                try
-                {
-                    stream = file.Open(FileMode.Open, FileAccess.Read, FileShare.None);
-                }
-                catch (IOException)
-                {
-                    //the file is unavailable because it is:
-                    //still being written to
-                    //or being processed by another thread
-                    return true;
-                }
-                finally
-                {
-                    if (stream != null)
-                        stream.Close();
-                }
-            }
-
-            //file is not locked
-            return false;
-        }
-
         private string filePath = string.Empty;
 
         /// <summary>
@@ -129,7 +102,7 @@ namespace JsonStore
         /// <param name="position">Strings location in the list.</param>
         public void ChangeString(string data, ushort position)
         {
-            strings[position] = data;
+            _strings[position] = data;
             ConvertListsToJson();
         }
 
@@ -140,7 +113,7 @@ namespace JsonStore
         /// <param name="position">Integers location in the list.</param>
         public void ChangeInteger(ushort data, ushort position)
         {
-            integers[position] = Convert.ToInt32(data);
+            _integers[position] = Convert.ToInt32(data);
             ConvertListsToJson();
         }
 
@@ -151,7 +124,7 @@ namespace JsonStore
         /// <param name="position">Bools postion in the list.</param>
         public void ChangeBool(ushort data, ushort position)
         {
-            bools[position] = Convert.ToBoolean(data);
+            _bools[position] = Convert.ToBoolean(data);
             ConvertListsToJson();
         }
 
@@ -169,10 +142,13 @@ namespace JsonStore
             {
                 try
                 {
-                    filePath = path + string.Format(@"\jsonStore_{0}.json", ID);
+                    lock (_fileLock)
+                    {
+                        filePath = path + string.Format(@"{0}jsonStore_{1}.json", path.Contains("/") ? "/" : "\\", ID);
 
-                    if (!Directory.Exists(path))
-                        Directory.Create(path);
+                        if (!Directory.Exists(path))
+                            Directory.Create(path);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -183,11 +159,12 @@ namespace JsonStore
             {
                 try
                 {
-                    var currentDirectory = Directory.GetApplicationDirectory().Split('\\');
-                    filePath = string.Format(@"\User\{0}\jsonStore_{1}.json", currentDirectory[2], ID);
+                    lock (_fileLock)
+                    {
+                        var currentDirectory = string.Format("{0}{1}User{1}App{2}", Directory.GetApplicationRootDirectory(), Directory.GetApplicationRootDirectory().Contains("/") ? "/" : "\\", InitialParametersClass.ApplicationNumber);
+                        filePath = string.Format(@"{0}{1}jsonStore_{2}.json", currentDirectory, currentDirectory.Contains("/") ? "/" : "\\",ID);
 
-                    if (!Directory.Exists(string.Format(@"\User\{0}\", currentDirectory[2])))
-                        Directory.Create(string.Format(@"\User\{0}\", currentDirectory[2]));
+                    }
                 }
                 catch (Exception e)
                 {
@@ -203,41 +180,39 @@ namespace JsonStore
             {
                 if (File.Exists(filePath))
                 {
-                    while (IsFileLocked(new FileInfo(filePath))) ;
-                    using (StreamReader reader = new StreamReader(File.OpenRead(filePath)))
+                    lock (_fileLock)
                     {
-                        Lists lists = JsonConvert.DeserializeObject<Lists>(reader.ReadToEnd());
+                        using (StreamReader reader = new StreamReader(File.OpenRead(filePath)))
+                        {
+                            var lists = JsonConvert.DeserializeObject<Lists>(reader.ReadToEnd());
 
-                        strings = lists.strings;
-                        integers = lists.integers;
-                        bools = lists.bools;
+                            _strings = lists.strings;
+                            _integers = lists.integers;
+                            _bools = lists.bools;
+                        }
                     }
                 }
 
                 else
                 {
-                    
-
                     for (int i = 1; i <= stringTotal; i++)
                     {
-                        strings.Add(string.Empty);
+                        _strings.Add(string.Empty);
                     }
                     for (int i = 1; i <= integerTotal; i++)
                     {
-                        integers.Add(0);
+                        _integers.Add(0);
                     }
                     for (int i = 1; i <= boolTotal; i++)
                     {
-                        bools.Add(false);
+                        _bools.Add(false);
                     }
 
                     ConvertListsToJson();
                 }
 
-                if (fileSuccessfullyCreated != null && File.Exists(filePath))
-                    fileSuccessfullyCreated(1);
-                else if (fileSuccessfullyCreated != null && !File.Exists(filePath))
-                    fileSuccessfullyCreated(0);
+                if (fileSuccessfullyCreated != null )
+                    fileSuccessfullyCreated(Convert.ToUInt16(File.Exists(filePath)));
             }
             catch (Exception e)
             {
@@ -256,15 +231,15 @@ namespace JsonStore
         {
             for(int i = 1; i <= stringsTotal; i++)
             {
-                newOnListChange(strings[i - 1], Convert.ToUInt16(strings[i - 1].Length), 1, "string", Convert.ToUInt16(i));
+                newOnListChange(_strings[i - 1], Convert.ToUInt16(_strings[i - 1].Length), 1, "string", Convert.ToUInt16(i));
             }
             for (int i = 1; i <= integersTotal; i++)
             {
-                newOnListChange(integers[i - 1].ToString(), Convert.ToUInt16(integers[i - 1]), Convert.ToUInt16(Convert.ToBoolean(integers[i - 1])), "int", Convert.ToUInt16(i));
+                newOnListChange(_integers[i - 1].ToString(), Convert.ToUInt16(_integers[i - 1]), Convert.ToUInt16(Convert.ToBoolean(_integers[i - 1])), "int", Convert.ToUInt16(i));
             }
             for (int i = 1; i <= boolsTotal; i++)
             {
-                newOnListChange(bools[i - 1].ToString(), Convert.ToUInt16(bools[i - 1]), Convert.ToUInt16(bools[i - 1]), "bool", Convert.ToUInt16(i));
+                newOnListChange(_bools[i - 1].ToString(), Convert.ToUInt16(_bools[i - 1]), Convert.ToUInt16(_bools[i - 1]), "bool", Convert.ToUInt16(i));
             }
         }
 
@@ -273,23 +248,13 @@ namespace JsonStore
         {
             try
             {
-                Lists lists = new Lists();
-                lists.FileID = ID;
-                lists.strings = strings;
-                lists.integers = integers;
-                lists.bools = bools;
-
-                string json = string .Empty;
-
-                if (IndentTrue == 0)
-                    json = JsonConvert.SerializeObject(lists, Formatting.None);
-                else
-                    json = JsonConvert.SerializeObject(lists, Formatting.Indented);
-
-                while (IsFileLocked(new FileInfo(filePath))) ;
-                using (FileStream writer = File.Create(filePath))
+                lock (_fileLock)
                 {
-                    writer.Write(json, Encoding.ASCII);
+                    using (FileStream writer = File.Create(filePath))
+                    {
+                        var json = JsonConvert.SerializeObject(new Lists() { FileID = ID, strings = _strings, integers = _integers, bools = _bools }, IndentTrue == 1 ? Formatting.Indented : Formatting.None);
+                        writer.Write(json, Encoding.ASCII);
+                    }
                 }
             }
             catch (Exception e)
@@ -309,19 +274,21 @@ namespace JsonStore
         {
             try
             {
-                CrestronFileTransferClient client = new CrestronFileTransferClient();
-
-                client.SetVerbose(true);
-                client.SetUserName(username);
-                client.SetPassword(password);
-
-                //if (type == "ftp")
-                var success = client.PutFile(string.Format("{0}{1}/jsonStore_{0}.json", host, remotePath, ID), filePath);
-
-                if (success == -1 || success == 1)
+                using (CrestronFileTransferClient client = new CrestronFileTransferClient())
                 {
-                    string err = client.GetLastClientStrError();
-                    ErrorLog.Error("jsonStore_{0} Error Sending File: {1}", ID, err);
+
+                    client.SetVerbose(true);
+                    client.SetUserName(username);
+                    client.SetPassword(password);
+
+                    //if (type == "ftp")
+                    var success = client.PutFile(string.Format("{0}{1}/jsonStore_{0}.json", host, remotePath, ID), filePath);
+
+                    if (success == -1 || success == 1)
+                    {
+                        string err = client.GetLastClientStrError();
+                        ErrorLog.Error("jsonStore_{0} Error Sending File: {1}", ID, err);
+                    }
                 }
             }
             catch (Exception e)
