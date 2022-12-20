@@ -1,10 +1,10 @@
 #SYMBOL_NAME "Json Store"
 
 #USER_SIMPLSHARP_LIBRARY "JsonStore"
+#ENABLE_TRACE
 
-#DEFINE_CONSTANT TotalBools 50
-#DEFINE_CONSTANT TotalAnalogs 50
-#DEFINE_CONSTANT TotalStrings 50 
+#DEFINE_CONSTANT Totals 50
+
 
 //#ENABLE_TRACE                   
 
@@ -20,13 +20,8 @@ ID: Any string that is unique to this instance, if mulitple stores will be used 
 
 Inputs:         
 Initialize: Initializes the JSON file, creates one if one does not exist or pulls the data and sends to SIMPL
-SendFile: Sends the jsonStore_{ID}.json file to another processor or FTP server
 Bools[x]: Stores the bool value when changed    
 Analogs[x]: Stores the analog value when chnaged
-ProcessorIP: Sets the remote processors/FTP server IP
-FTP_Username: Sets the username to use to login to the remote processor/FTP server   
-FTP_Password: Sets the password to use to login to the remote processor/FTP server
-FTP_RemoteFilePath: Sets the remote FTP servers file path to send file to
 Strings[x]: Stores the strings content when changed
 
 FileCreated: Indicates that the file was created succesfully or the file was found in the directory                                                   
@@ -39,55 +34,83 @@ StringsOut[x]: Reports the currently saved strings content
 Since this module saves the file to processors harddrive, the file can be retrieved and sent to another procesor
 To send file to another FTP server, ensure in the home directory that a directory has been created named User
 #HELP_END
+Digital_Input _skip_, _skip_, _skip_, _skip_, _skip_, Initialize, Save, Recall, _skip_, Bools[Totals,Totals];
+String_Input _skip_, Strings[Totals][255];   
+Analog_Input _skip_, Analogs[Totals,Totals];
 
-String_Input _skip_, ProcessorIP[16], FTP_Username[100], FTP_Password[100], FTP_RemoteFilePath[1000], _skip_, Strings[TotalStrings][255];   
-Digital_Input _skip_, _skip_, _skip_, Initialize, SendFile, Bools[TotalBools,TotalBools];
-Analog_Input Analogs[TotalAnalogs,TotalAnalogs];
-
-String_Output _skip_, _skip_, _skip_, _skip_, _skip_, _skip_, StringsOut[TotalStrings,TotalStrings];
-Digital_Output _skip_, _skip_, _skip_, FileCreated, _skip_, BoolsOut[TotalBools,TotalBools];
-Analog_Output AnalogsOut[TotalAnalogs,TotalAnalogs];
+Digital_Output _skip_, _skip_, _skip_, _skip_, _skip_, FileCreated, _skip_, SaveBusy, _skip_, BoolsOut[Totals,Totals];
+String_Output _skip_, StringsOut[Totals,Totals];
+Analog_Output _skip_, AnalogsOut[Totals,Totals];
 
 Integer_Parameter IndentJsonFile;
 String_Parameter FilePath[100], ID[100];
+integer_parameter EnableAutoSave;
+integer_parameter EnableBoolsToggle;
+
+#BEGIN_PARAMETER_PROPERTIES EnableAutoSave, EnableBoolsToggle
+propDefaultValue = 1d;
+#END_PARAMETER_PROPERTIES
 
 Json store;      
 
-Integer enable;
+Integer enable, waitForInit;
 
 Change Bools
 {    
 	integer x, y;
 	
-	if (enable)
-	{               
-		x = GetLastModifiedArrayIndex();
-		y = Bools[x];
-		
-		if(BoolsOut[x] != y)
+	if (!enable)
+	{
+		return;
+	}
+	
+	x = GetLastModifiedArrayIndex();
+	
+	y = Bools[x];
+	
+	if(EnableBoolsToggle)
+	{
+		if(y)
 		{
+			y = !BoolsOut[x];
+			
+			if(EnableAutoSave)
 			store.ChangeBool(y, x - 1);
+			
 			BoolsOut[x] = y;
 		}
 	}
+	else
+	{
+		if(BoolsOut[x] != y)
+		{
+			if(EnableAutoSave)
+			store.ChangeBool(y, x - 1);
+		}
+		
+		BoolsOut[x] = y;
+	}	
 } 
 
 Change Analogs
 {       
 	integer x, y;
 	
-	if (enable)
-	{	
-		x = GetLastModifiedArrayIndex();
-		y = Analogs[x];
-		
-		if(AnalogsOut[x] != y)
-		{
-			store.ChangeInteger(y, x - 1);  
-			
-			AnalogsOut[x] = y;	
-		}
+	if (!enable)
+	{
+		return;
+	}	
+	
+	x = GetLastModifiedArrayIndex();
+	y = Analogs[x];
+	
+	if(AnalogsOut[x] != y)
+	{
+		if(EnableAutoSave)
+		store.ChangeInteger(y, x - 1);  
 	}
+	
+	AnalogsOut[x] = y;
 }  
 
 Change Strings
@@ -95,66 +118,103 @@ Change Strings
 	integer x;
 	string y[255];
 	
-	if (enable)
+	if (!enable)
 	{
-		x = GetLastModifiedArrayIndex();
-		y = Strings[x];
-		
-		store.ChangeString(y, x - 1);  
-		
-		StringsOut[x] = y;
+		return;
 	}
-}  
-
-Callback Function Func(STRING s , INTEGER i , INTEGER b , STRING type , INTEGER position)
-{
-	if(!enable)
-		enable = 1;
 	
-	IF (type = "string")
-	{
-		StringsOut[position] = s;
-	}  
-	Else If (type = "int")
-	{
-		if(AnalogsOut[position] != i)
-		AnalogsOut[position] = i;
-	}    
-	Else If (type = "bool")
-	{
-		if(BoolsOut[position] != b)
-		BoolsOut[position] = b;
-	}   
-}   
+	x = GetLastModifiedArrayIndex();
+	y = Strings[x];
+	
+	if(EnableAutoSave)
+	store.ChangeString(y, x - 1);  
+	
+	StringsOut[x] = y;
+} 
 
-Callback Function FileReady(integer value)
+threadsafe Push Initialize
 {
+	while(!waitForInit);
+	store.LoadLists(Totals, Totals, Totals, FilePath, ID);	
+}
+
+threadsafe push Save
+{
+	integer cnt;
+	SimplLists myLists;
+	
+	if(!enable)
+	{
+		return;
+	}
+	
+	SaveBusy = 1;
+	
+	myLists.Resize(Totals);
+	
+	for(cnt = 1 to Totals)
+	{
+		myLists.Strings[cnt - 1] = Strings[cnt];
+		myLists.Integers[cnt - 1] = Analogs[cnt];
+		myLists.Bools[cnt - 1] = Bools[cnt];
+	}
+	
+	store.ChangeTriList(myLists, 0,  Totals - 1);
+	
+	SaveBusy = 0;
+}
+
+push Recall
+{
+	if (!enable)
+	{
+		return;
+	}
+	
+	store.SendLists();
+}
+
+Callback Function NewFileCreated(integer value)
+{
+	trace("FileCreated %d", value);
 	FileCreated = value;
 }
 
-Push SendFile
+callback function NewTriListChanged(SimplLists newLists)
 {
-	if (enable)  
+	integer cnt;
+	
+	if(!enable)
 	{
-		store.SendToAnotherProcessor(ProcessorIP, FTP_Username, FTP_Password , FTP_RemoteFilePath);
+		enable = 1;
 	}
-}
-
-Push Initialize
-{       
-	Delay(50);
-	store.LoadLists(TotalStrings, TotalAnalogs, TotalBools, FilePath);	
+	
+	for(cnt = 1 to newLists.StringsLength)
+	{
+		StringsOut[cnt] = newLists.Strings[cnt - 1];
+	}
+	
+	for(cnt = 1 to newLists.IntegersLength)
+	{
+		AnalogsOut[cnt] = newLists.Integers[cnt - 1];
+	}
+	
+	for(cnt = 1 to newLists.BoolsLength)
+	{
+		BoolsOut[cnt] = newLists.Bools[cnt - 1];
+	}
 }
 
 Function Main()
 {
 	WaitForInitializationComplete();  
 	
-	store.ID = ID;
 	store.IndentTrue = IndentJsonFile;
-	RegisterDelegate(store, newOnListChange, Func);
-	RegisterDelegate(store, fileSuccessfullyCreated, FileReady);
+	RegisterDelegate(store, OnFileCreated, NewFileCreated);
+	RegisterDelegate(store, OnTriListChanged, NewTriListChanged);
 	
+	delay(50);
+	waitForInit = 1;
 }
 
 

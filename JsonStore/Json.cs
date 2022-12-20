@@ -9,42 +9,7 @@ using Newtonsoft.Json;
 namespace JsonStore
 {
     /// <summary>
-    /// Object to desearlize JSON.
-    /// </summary>
-    public class Lists
-    {
-        /// <summary>
-        /// Current file ID.
-        /// </summary>
-        public string FileID { get; set; }
-
-        /// <summary>
-        /// List of stored strings.
-        /// </summary>
-        public List<string> strings { get; set; }
-
-        /// <summary>
-        /// List of stored integers.
-        /// </summary>
-        public List<int> integers { get; set; }
-
-        /// <summary>
-        /// List of stored bools.
-        /// </summary>
-        public List<bool> bools { get; set; }
-
-        /// <summary>
-        /// Returns objects value as a string.
-        /// </summary>
-        /// <returns>Objects value as a string</returns>
-        public override string ToString()
-        {
-            return "strings:\n" + strings.ToString() + "\nintegers:\n" + integers.ToString() + "\nbools:\n" + bools.ToString() + "\n";
-        }
-    }
-
-    /// <summary>
-    /// Object to setup and use the stored lists.
+    /// JSON object to store SIMPL digital, analog and string values
     /// </summary>
     public class Json
     {
@@ -52,99 +17,212 @@ namespace JsonStore
         private List<int> _integers = new List<int>();
         private List<bool> _bools = new List<bool>();
         private readonly object _fileLock = new object();
-        
-        /// <summary>
-        /// Sets or gets the newOnListChange.
-        /// </summary>
-        public OnListChange newOnListChange { get; set; }
+        private readonly object _listLock = new object();
+
+        public TriListChangedCallback OnTriListChanged { get; set; }
+
+        public FileCreatedCallback OnFileCreated { get; set; }
+
+        public delegate void TriListChangedCallback(SimplLists simplLists);
+
+        public delegate void FileCreatedCallback(ushort value);
 
         /// <summary>
-        /// Sets or gets the fileSuccessfullyCreated.
+        /// Sets or gets the JSON file ID
         /// </summary>
-        public OnFileSuccesfullyCreated fileSuccessfullyCreated { get; set; }
+        public string ID { get {return _id;}}
 
         /// <summary>
-        /// Delegate that passes data between S# and S+.
-        /// </summary>
-        /// <param name="s">Returned string.</param>
-        /// <param name="i">Returned integer.</param>
-        /// <param name="b">Returned bool.</param>
-        /// <param name="type">Returned signal type.</param>
-        /// <param name="position">Returned signals location in the list.</param>
-        public delegate void OnListChange(SimplSharpString s, ushort i, ushort b, SimplSharpString type, ushort position);
-
-        /// <summary>
-        /// Delegate that passes file creation status to s+.
-        /// </summary>
-        /// <param name="value">Returns file exists status.</param>
-        public delegate void OnFileSuccesfullyCreated(ushort value);
-
-        /// <summary>
-        /// Sets or gets the JSON ID.
-        /// </summary>
-        public string ID { get; set; }
-
-        /// <summary>
-        /// Sets file formatting.
+        /// Sets whether the JSON file should be indented
         /// </summary>
         public ushort IndentTrue { get; set; }
 
-        private int stringsTotal;
-        private int integersTotal;
-        private int boolsTotal;
-
-        private string filePath = string.Empty;
+        private string _id;
+        private int _stringsTotal;
+        private int _integersTotal;
+        private int _boolsTotal;
+        private bool _fileLoaded;
+        private string _filePath;
 
         /// <summary>
-        /// New or existing string to store.
+        /// New or existing string to store
         /// </summary>
-        /// <param name="data">Strings contents.</param>
-        /// <param name="position">Strings location in the list.</param>
-        public void ChangeString(string data, ushort position)
+        /// <param name="sString">String value to store</param>
+        /// <param name="index">String index in the list</param>
+        public void ChangeString(string sString, ushort index)
         {
-            _strings[position] = data;
-            ConvertListsToJson();
+            if (!_fileLoaded)
+                return;
+
+            if (index < _strings.Count)
+            {
+                lock (_listLock)
+                {
+                    _strings[index] = sString;
+                }
+                ConvertListsToJson();
+            }
         }
 
         /// <summary>
-        /// New or existing integer to store.
+        /// New or existing strings to store.
         /// </summary>
-        /// <param name="data">Integers value.</param>
-        /// <param name="position">Integers location in the list.</param>
-        public void ChangeInteger(ushort data, ushort position)
+        /// <param name="sStrings">Array of string values to store</param>
+        /// <param name="startIndex">Starting index in the list</param>
+        /// <param name="endIndex">Ending index in the list</param>
+        public void ChangeStrings(string[] sStrings, ushort startIndex, ushort endIndex)
         {
-            _integers[position] = Convert.ToInt32(data);
-            ConvertListsToJson();
+            if (!_fileLoaded)
+                return;
+
+            if (startIndex >= 0 && endIndex < _strings.Count)
+            {
+                if ((endIndex - startIndex) > 0)
+                {
+                    lock (_listLock)
+                    {
+                        var cnt = 0;
+                        for (var i = startIndex; i <= endIndex; i++)
+                        {
+                            _strings[i] = sStrings[cnt];
+                            cnt++;
+                        }
+                    }
+
+                    ConvertListsToJson();
+                }
+            }
         }
 
         /// <summary>
-        /// New or existing bool to store.
+        /// New or existing integer to store
         /// </summary>
-        /// <param name="data">Bools value.</param>
-        /// <param name="position">Bools postion in the list.</param>
-        public void ChangeBool(ushort data, ushort position)
+        /// <param name="sInteger">Integer value to store</param>
+        /// <param name="index">Integer index in the list.</param>
+        public void ChangeInteger(ushort sInteger, ushort index)
         {
-            _bools[position] = Convert.ToBoolean(data);
-            ConvertListsToJson();
+            if (!_fileLoaded)
+                return;
+
+            if (index < _integers.Count)
+            {
+                lock (_listLock)
+                {
+                    _integers[index] = Convert.ToInt32(sInteger);
+                }
+                ConvertListsToJson();
+            }
+        }
+
+        public void ChangeIntegers(ushort[] sIntegers, ushort startIndex, ushort endIndex)
+        {
+            if (!_fileLoaded)
+                return;
+
+            if (startIndex >= 0 && endIndex < _integers.Count)
+            {
+                if ((endIndex - startIndex) > 0)
+                {
+                    lock (_listLock)
+                    {
+                        var cnt = 0;
+                        for (var i = startIndex; i <= endIndex; i++)
+                        {
+                            _integers[i] = sIntegers[cnt];
+                            cnt++;
+                        }
+                    }
+                    ConvertListsToJson();
+                }
+            }
+        }
+
+        /// <summary>
+        /// New or existing bool to store
+        /// </summary>
+        /// <param name="sBool">Bool value to store</param>
+        /// <param name="index">Bool index in the list</param>
+        public void ChangeBool(ushort sBool, ushort index)
+        {
+            if (!_fileLoaded)
+                return;
+
+            if (index < _bools.Count)
+            {
+                lock (_listLock)
+                {
+                    _bools[index] = Convert.ToBoolean(sBool);
+                }
+                ConvertListsToJson();
+            }
+        }
+
+        public void ChangeBools(ushort[] sBools, ushort startIndex, ushort endIndex)
+        {
+            if (!_fileLoaded)
+                return;
+
+            if (startIndex >= 0 && endIndex < _bools.Count)
+            {
+                if ((endIndex - startIndex) > 0)
+                {
+                    lock (_listLock)
+                    {
+                        var cnt = 0;
+                        for (var i = startIndex; i <= endIndex; i++)
+                        {
+                            _bools[i] = Convert.ToBoolean(sBools[cnt]);
+                            cnt++;
+                        }
+                    }
+                    ConvertListsToJson();
+                }
+            }
+        }
+
+        public void ChangeTriList(SimplLists simplList, ushort startPosition, ushort endPosition)
+        {
+            if (!_fileLoaded)
+                return;
+
+            if (startPosition >= 0)
+            {
+                if (endPosition < _strings.Count && endPosition < _integers.Count && endPosition < _bools.Count)
+                {
+                    if ((endPosition - startPosition) > 0)
+                    {
+                        lock (_listLock)
+                        {
+                            _strings = simplList.Strings.ToList();
+                            _integers = simplList.Integers.Select(x => (int)x).ToList();
+                            _bools = simplList.Bools.Select(x => x != 0).ToList();
+                        }
+                        ConvertListsToJson();
+                    }
+                }
+            }
         }
 
 
         /// <summary>
-        /// Setups objects and creates/reads the JSON file.
+        /// Loads or create the JSON file
         /// </summary>
-        /// <param name="stringTotal">Total strings in list.</param>
-        /// <param name="integerTotal">Total integers is list.</param>
-        /// <param name="boolTotal">Total bools in list.</param>
-        /// <param name="path">File directory to save file too.</param>
-        public void LoadLists(ushort stringTotal, ushort integerTotal, ushort boolTotal, string path)
+        /// <param name="stringTotal">Total strings in list</param>
+        /// <param name="integerTotal">Total integers is list</param>
+        /// <param name="boolTotal">Total bools in list</param>
+        /// <param name="path">File directory to save file</param>
+        /// <param name="id">ID to assign the JSON file</param>
+        public void LoadLists(ushort stringTotal, ushort integerTotal, ushort boolTotal, string path, string id)
         {
+            _id = id;
             if (path.Length > 0)
             {
                 try
-                {
+                { 
                     lock (_fileLock)
                     {
-                        filePath = path + string.Format(@"{0}jsonStore_{1}.json", path.Contains("/") ? "/" : "\\", ID);
+                        
+                        _filePath = string.Format(@"{0}jsonStore_{1}.json", path, _id);
 
                         if (!Directory.Exists(path))
                             Directory.Create(path);
@@ -153,6 +231,7 @@ namespace JsonStore
                 catch (Exception e)
                 {
                     ErrorLog.Exception("Exception occured in LoadLists custom directory", e);
+                    return;
                 }
             }
             else
@@ -161,85 +240,102 @@ namespace JsonStore
                 {
                     lock (_fileLock)
                     {
-                        var currentDirectory = string.Format("{0}{1}User{1}App{2}", Directory.GetApplicationRootDirectory(), Directory.GetApplicationRootDirectory().Contains("/") ? "/" : "\\", InitialParametersClass.ApplicationNumber);
-                        filePath = string.Format(@"{0}{1}jsonStore_{2}.json", currentDirectory, currentDirectory.Contains("/") ? "/" : "\\",ID);
+                        var currentDirectory = string.Format("{0}\\user\\", Directory.GetApplicationRootDirectory());
+                        _filePath = string.Format("{0}jsonStore_{1}.json", currentDirectory, _id);
 
                     }
                 }
                 catch (Exception e)
                 {
                     ErrorLog.Exception("Exception occured in LoadLists default directory", e);
+                    return;
                 }
             }
 
-            stringsTotal = stringTotal;
-            integersTotal = integerTotal;
-            boolsTotal = boolTotal;
+            _stringsTotal = stringTotal;
+            _integersTotal = integerTotal;
+            _boolsTotal = boolTotal;
 
             try
             {
-                if (File.Exists(filePath))
+                if (File.Exists(_filePath))
                 {
                     lock (_fileLock)
                     {
-                        using (StreamReader reader = new StreamReader(File.OpenRead(filePath)))
+                        using (StreamReader reader = new StreamReader(File.OpenRead(_filePath)))
                         {
                             var lists = JsonConvert.DeserializeObject<Lists>(reader.ReadToEnd());
 
-                            _strings = lists.strings;
-                            _integers = lists.integers;
-                            _bools = lists.bools;
+                            lock (_listLock)
+                            {
+                                _strings = lists.strings;
+                                _integers = lists.integers;
+                                _bools = lists.bools;
+                            }
                         }
                     }
                 }
-
                 else
                 {
-                    for (int i = 1; i <= stringTotal; i++)
+                    lock (_listLock)
                     {
-                        _strings.Add(string.Empty);
-                    }
-                    for (int i = 1; i <= integerTotal; i++)
-                    {
-                        _integers.Add(0);
-                    }
-                    for (int i = 1; i <= boolTotal; i++)
-                    {
-                        _bools.Add(false);
+                        for (var i = 1; i <= stringTotal; i++)
+                        {
+                            _strings.Add(string.Empty);
+                        }
+                        for (var i = 1; i <= integerTotal; i++)
+                        {
+                            _integers.Add(0);
+                        }
+                        for (var i = 1; i <= boolTotal; i++)
+                        {
+                            _bools.Add(false);
+                        }
                     }
 
                     ConvertListsToJson();
                 }
 
-                if (fileSuccessfullyCreated != null )
-                    fileSuccessfullyCreated(Convert.ToUInt16(File.Exists(filePath)));
+                if (OnFileCreated != null)
+                    OnFileCreated(Convert.ToUInt16(File.Exists(_filePath)));
             }
             catch (Exception e)
             {
-                if (fileSuccessfullyCreated != null)
-                    fileSuccessfullyCreated(0);
+                if (OnFileCreated != null)
+                    OnFileCreated(0);
                 ErrorLog.Error("jsonStore_{0} Error creating/reading lists: {1}", ID, e.InnerException);
+                return;
             }
 
+            _fileLoaded = true;
             SendLists();
         }
 
         /// <summary>
-        /// Sends all lists to S+.
+        /// Sends digital, analog and string lists to S+
         /// </summary>
-        private void SendLists()
+        public void SendLists()
         {
-            for(int i = 1; i <= stringsTotal; i++)
+            if (!_fileLoaded)
+                return;
+
+            lock (_listLock)
             {
-                newOnListChange(_strings[i - 1], Convert.ToUInt16(_strings[i - 1].Length), 1, "string", Convert.ToUInt16(i));
-            }
-            for (int i = 1; i <= integersTotal; i++)
-            {
-                newOnListChange(_integers[i - 1].ToString(), Convert.ToUInt16(_integers[i - 1]), Convert.ToUInt16(Convert.ToBoolean(_integers[i - 1])), "int", Convert.ToUInt16(i));
-            }
-            for (int i = 1; i <= boolsTotal; i++)
-            {
-                newOnListChange(_bools[i - 1].ToString(), Convert.ToUInt16(_bools[i - 1]), Convert.ToUInt16(_bools[i - 1]), "bool", Convert.ToUInt16(i));
+                /*
+                for (var i = 1; i <= _stringsTotal; i++)
+                {
+                    OnListChange(_strings[i - 1], Convert.ToUInt16(_strings[i - 1].Length), 1, "string", Convert.ToUInt16(i));
+                }
+                for (var i = 1; i <= _integersTotal; i++)
+                {
+                    OnListChange(_integers[i - 1].ToString(), Convert.ToUInt16(_integers[i - 1]), Convert.ToUInt16(Convert.ToBoolean(_integers[i - 1])), "int", Convert.ToUInt16(i));
+                }
+                for (var i = 1; i <= _boolsTotal; i++)
+                {
+                    OnListChange(_bools[i - 1].ToString(), Convert.ToUInt16(_bools[i - 1]), Convert.ToUInt16(_bools[i - 1]), "bool", Convert.ToUInt16(i));
+                }*/
+
+                OnTriListChanged(new SimplLists(_strings.ToArray(), _integers.ToArray(), _bools.ToArray()));
             }
         }
 
@@ -250,7 +346,7 @@ namespace JsonStore
             {
                 lock (_fileLock)
                 {
-                    using (FileStream writer = File.Create(filePath))
+                    using (FileStream writer = File.Create(_filePath))
                     {
                         var json = JsonConvert.SerializeObject(new Lists() { FileID = ID, strings = _strings, integers = _integers, bools = _bools }, IndentTrue == 1 ? Formatting.Indented : Formatting.None);
                         writer.Write(json, Encoding.ASCII);
@@ -264,37 +360,44 @@ namespace JsonStore
         }
 
         /// <summary>
-        /// Sends the JSON file to another processor/FTP server.
+        /// Sends the JSON file to another processor/FTP server
         /// </summary>
-        /// <param name="ipAddress">IP address of FTP server.</param>
-        /// <param name="username">Username to login to the FTP server.</param>
-        /// <param name="password">Password to login to the FTP server.</param>
-        /// <param name="remotePath">File path to upload file too.</param>
+        /// <param name="host">IP address of remote FTP server</param>
+        /// <param name="username">Username to login to the remote FTP server</param>
+        /// <param name="password">Password to login to the remote FTP server</param>
+        /// <param name="remotePath">Remote FTP server file path to upload file</param>
         public void SendToAnotherProcessor(string host, string username, string password, string remotePath)
         {
-            try
+
+            if (!_fileLoaded)
+                return;
+
+            using (CrestronFileTransferClient client = new CrestronFileTransferClient())
             {
-                using (CrestronFileTransferClient client = new CrestronFileTransferClient())
+                client.SetVerbose(true);
+                client.SetUserName(username);
+                client.SetPassword(password);
+
+                lock (_fileLock)
                 {
-
-                    client.SetVerbose(true);
-                    client.SetUserName(username);
-                    client.SetPassword(password);
-
-                    //if (type == "ftp")
-                    var success = client.PutFile(string.Format("{0}{1}/jsonStore_{0}.json", host, remotePath, ID), filePath);
-
-                    if (success == -1 || success == 1)
+                    try
                     {
-                        string err = client.GetLastClientStrError();
-                        ErrorLog.Error("jsonStore_{0} Error Sending File: {1}", ID, err);
+                        var success = client.PutFile(string.Format("{0}{1}/jsonStore_{0}.json", host, remotePath, ID), _filePath);
+
+                        if (success == -1 || success == 1)
+                        {
+                            string err = client.GetLastClientStrError();
+                            ErrorLog.Error("jsonStore_{0} Error Sending File: {1}", ID, err);
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        ErrorLog.Exception("Exception in SendToAnotherProcessor", e);
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                ErrorLog.Exception("Exception in SendToAnotherProcessor", e);
+
             }
         }
+
     }
 }
