@@ -18,7 +18,7 @@
         </member>
         <member name="M:JsonStore.Json.ChangeStrings(System.String[],System.UInt16,System.UInt16)">
             <summary>
-            New or existing strings to store.
+            New or existing strings to store
             </summary>
             <param name="sStrings">Array of string values to store</param>
             <param name="startIndex">Starting index in the list</param>
@@ -31,6 +31,14 @@
             <param name="sInteger">Integer value to store</param>
             <param name="index">Integer index in the list.</param>
         </member>
+        <member name="M:JsonStore.Json.ChangeIntegers(System.UInt16[],System.UInt16,System.UInt16)">
+            <summary>
+            New or existing integers to store
+            </summary>
+            <param name="sIntegers">Array of integer values to store</param>
+            <param name="startIndex">Starting index in the list</param>
+            <param name="endIndex">Ending index in the list</param>
+        </member>
         <member name="M:JsonStore.Json.ChangeBool(System.UInt16,System.UInt16)">
             <summary>
             New or existing bool to store
@@ -38,9 +46,17 @@
             <param name="sBool">Bool value to store</param>
             <param name="index">Bool index in the list</param>
         </member>
+        <member name="M:JsonStore.Json.ChangeBools(System.UInt16[],System.UInt16,System.UInt16)">
+            <summary>
+            New or existing bools to store
+            </summary>
+            <param name="sBools">Array of bool values to store</param>
+            <param name="startIndex">Starting index in the list</param>
+            <param name="endIndex">Ending index in the list</param>
+        </member>
         <member name="M:JsonStore.Json.LoadLists(System.UInt16,System.UInt16,System.UInt16,System.String,System.String)">
             <summary>
-            Loads or create the JSON file
+            Load or create the JSON file
             </summary>
             <param name="stringTotal">Total strings in list</param>
             <param name="integerTotal">Total integers is list</param>

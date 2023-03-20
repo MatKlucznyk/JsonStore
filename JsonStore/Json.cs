@@ -1,7 +1,7 @@
 ﻿using System;
-using System.Text;
-using System.Linq;
 using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using Crestron.SimplSharp;                          				// For Basic SIMPL# Classes
 using Crestron.SimplSharp.CrestronIO;
 using Newtonsoft.Json;
@@ -65,7 +65,7 @@ namespace JsonStore
         }
 
         /// <summary>
-        /// New or existing strings to store.
+        /// New or existing strings to store
         /// </summary>
         /// <param name="sStrings">Array of string values to store</param>
         /// <param name="startIndex">Starting index in the list</param>
@@ -114,6 +114,12 @@ namespace JsonStore
             }
         }
 
+        /// <summary>
+        /// New or existing integers to store
+        /// </summary>
+        /// <param name="sIntegers">Array of integer values to store</param>
+        /// <param name="startIndex">Starting index in the list</param>
+        /// <param name="endIndex">Ending index in the list</param>
         public void ChangeIntegers(ushort[] sIntegers, ushort startIndex, ushort endIndex)
         {
             if (!_fileLoaded)
@@ -157,6 +163,12 @@ namespace JsonStore
             }
         }
 
+        /// <summary>
+        /// New or existing bools to store
+        /// </summary>
+        /// <param name="sBools">Array of bool values to store</param>
+        /// <param name="startIndex">Starting index in the list</param>
+        /// <param name="endIndex">Ending index in the list</param>
         public void ChangeBools(ushort[] sBools, ushort startIndex, ushort endIndex)
         {
             if (!_fileLoaded)
@@ -205,7 +217,7 @@ namespace JsonStore
 
 
         /// <summary>
-        /// Loads or create the JSON file
+        /// Load or create the JSON file
         /// </summary>
         /// <param name="stringTotal">Total strings in list</param>
         /// <param name="integerTotal">Total integers is list</param>
@@ -321,20 +333,6 @@ namespace JsonStore
 
             lock (_listLock)
             {
-                /*
-                for (var i = 1; i <= _stringsTotal; i++)
-                {
-                    OnListChange(_strings[i - 1], Convert.ToUInt16(_strings[i - 1].Length), 1, "string", Convert.ToUInt16(i));
-                }
-                for (var i = 1; i <= _integersTotal; i++)
-                {
-                    OnListChange(_integers[i - 1].ToString(), Convert.ToUInt16(_integers[i - 1]), Convert.ToUInt16(Convert.ToBoolean(_integers[i - 1])), "int", Convert.ToUInt16(i));
-                }
-                for (var i = 1; i <= _boolsTotal; i++)
-                {
-                    OnListChange(_bools[i - 1].ToString(), Convert.ToUInt16(_bools[i - 1]), Convert.ToUInt16(_bools[i - 1]), "bool", Convert.ToUInt16(i));
-                }*/
-
                 OnTriListChanged(new SimplLists(_strings.ToArray(), _integers.ToArray(), _bools.ToArray()));
             }
         }

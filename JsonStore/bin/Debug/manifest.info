@@ -1,6 +1,6 @@
-﻿MainAssembly=JsonStore.dll:fefa2a0c723887b0e02756f9fbb72087
+﻿MainAssembly=JsonStore.dll:6dee0aa285688041367ef53d16826c2e
 MainAssemblyMinFirmwareVersion=1.007.0017
-MainAssemblyResource=JsonStore.xml:34c634b32623d7a3b74f4acd61cd624c
+MainAssemblyResource=JsonStore.xml:da4be0605fc2eca420092143843f7c0d
 MainAssemblyResource=SimplSharpData.dat:820b61c48c8a2cace82957eed4cc377c
 MainAssemblyResource=SimplSharpData.dat.der:bf862965c00f3e6ec535e4e00e82d30c
 MainAssemblyResource=SimplSharpData.dat:820b61c48c8a2cace82957eed4cc377c
